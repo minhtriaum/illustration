@@ -30,7 +30,7 @@ details{margin-top:10px}summary{cursor:pointer;color:var(--ac);font-size:13px}
 .empty{color:var(--mu);text-align:center;padding:10px}
 a{color:var(--ac)}
 </style></head><body><main>
-<h1>삽화 추출기 (2개 언어) <span id="ver" style="font-size:12px;color:var(--mu);font-weight:400">v261008_1223</span> <button class="sec" id="rnb" style="padding:4px 10px;font-size:12px;margin-left:6px">릴리즈 노트</button></h1>
+<h1>삽화 추출기 (다언어) <span id="ver" style="font-size:12px;color:var(--mu);font-weight:400">v10081223</span> <button class="sec" id="rnb" style="padding:4px 10px;font-size:12px;margin-left:6px">릴리즈 노트</button></h1>
 <p class="sub">같은 문서의 두 언어판 링크를 넣으면 삽화별로 캡션·설명·일자를 나란히 보여 줍니다. 링크 하나만 넣어도 동작합니다.</p>
 
 <div class="card" id="rn" style="display:none"></div>
@@ -38,7 +38,7 @@ a{color:var(--ac)}
 <div class="card">
 <label for="url1">링크 1 (예: 한국어)</label>
 <input type="text" id="url1" placeholder="https://wol.jw.org/ko/wol/d/r8/lp-ko/2026520">
-<label for="url2" style="margin-top:10px">링크 2 (예: 영어 등 다른 언어판)</label>
+<label for="url2" style="margin-top:10px">링크 2 (예:다른 언어)</label>
 <input type="text" id="url2" placeholder="같은 문서의 다른 언어 링크">
 <div class="row"><button id="go">삽화 추출</button><button class="sec" id="clr">지우기</button></div>
 <label style="display:flex;gap:8px;align-items:center;margin:12px 0 0;color:var(--tx);font-size:14px"><input type="checkbox" id="opt1" checked> 이미지는 하나만 표시 (링크 1 기준, 끄면 언어별로 각각 표시)</label>
@@ -358,7 +358,7 @@ const RELEASES=[
  {v:'261008_초기',notes:['삽화·figcaption 분석기 최초 제작: 페이지 소스 붙여넣기 방식','링크 자동 불러오기와 중계 서비스 추가']}
 ];
 function renderRN(){
-  $('#rn').innerHTML='<b>릴리즈 노트</b> <span class="note">최신순 · 업데이트마다 누적됩니다</span>'+RELEASES.map((r,i)=>
+  $('#rn').innerHTML='<b>Rn</b> <span class="note">최신순 · 업데이트마다 누적됩니다</span>'+RELEASES.map((r,i)=>
     '<div style="margin-top:12px"><span class="tag">v'+esc(r.v.replace(/^v/,''))+'</span>'+(i===0?'<span class="note">현재 버전</span>':'')
     +'<ul style="margin:6px 0 0;padding-left:20px">'+r.notes.map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul></div>').join('');
 }
