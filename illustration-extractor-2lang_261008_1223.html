@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>삽화 추출기 (2개 언어) v261008_1223</title>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--tx:#1d1d1b;--mu:#6b6b66;--ac:#2f5d8a;--bd:#e0e0da;--hi:#eef3f8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151516;--card:#1f1f21;--tx:#ececea;--mu:#9a9a94;--ac:#7fb0e0;--bd:#333336;--hi:#242a31}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.6 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;padding:16px}
+main{max-width:860px;margin:0 auto}
+h1{font-size:19px;margin:4px 0 2px}.sub{color:var(--mu);font-size:13px;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--mu);margin:0 0 4px}
+input[type=text],textarea{width:100%;border:1px solid var(--bd);border-radius:8px;padding:10px;font:inherit;background:var(--bg);color:var(--tx)}
+textarea{height:100px;font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+button{border:0;border-radius:8px;padding:10px 14px;font:inherit;font-weight:600;background:var(--ac);color:#fff;cursor:pointer}
+button.sec{background:var(--hi);color:var(--ac);border:1px solid var(--bd)}
+button:disabled{opacity:.6}
+.note{font-size:12.5px;color:var(--mu);margin:8px 0 0}
+.tag{display:inline-block;font-size:12px;background:var(--hi);color:var(--ac);border-radius:6px;padding:1px 8px;margin-right:6px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:10px}
+.col{border-left:3px solid var(--ac);padding-left:10px}
+.lg{font-size:12px;font-weight:700;color:var(--ac)}
+.k{font-size:12px;color:var(--mu);margin:8px 0 2px;font-weight:600}
+.v{margin:0;word-break:break-word}.cap{font-style:italic}
+.imgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.imgs img{width:100%;border-radius:8px;display:block}
+details{margin-top:10px}summary{cursor:pointer;color:var(--ac);font-size:13px}
+.empty{color:var(--mu);text-align:center;padding:10px}
+a{color:var(--ac)}
+</style></head><body><main>
+<h1>삽화 추출기 (2개 언어) <span id="ver" style="font-size:12px;color:var(--mu);font-weight:400">v261008_1223</span> <button class="sec" id="rnb" style="padding:4px 10px;font-size:12px;margin-left:6px">릴리즈 노트</button></h1>
+<p class="sub">같은 문서의 두 언어판 링크를 넣으면 삽화별로 캡션·설명·일자를 나란히 보여 줍니다. 링크 하나만 넣어도 동작합니다.</p>
+
+<div class="card" id="rn" style="display:none"></div>
+
+<div class="card">
+<label for="url1">링크 1 (예: 한국어)</label>
+<input type="text" id="url1" placeholder="https://wol.jw.org/ko/wol/d/r8/lp-ko/2026520">
+<label for="url2" style="margin-top:10px">링크 2 (예: 영어 등 다른 언어판)</label>
+<input type="text" id="url2" placeholder="같은 문서의 다른 언어 링크">
+<div class="row"><button id="go">삽화 추출</button><button class="sec" id="clr">지우기</button></div>
+<label style="display:flex;gap:8px;align-items:center;margin:12px 0 0;color:var(--tx);font-size:14px"><input type="checkbox" id="opt1" checked> 이미지는 하나만 표시 (링크 1 기준, 끄면 언어별로 각각 표시)</label>
+<p class="note" id="fmsg" style="min-height:1em"></p>
+<details><summary>자동 불러오기가 안 될 때 (페이지 소스 붙여넣기)</summary>
+<label for="src1" style="margin-top:8px">링크 1의 페이지 소스</label><textarea id="src1"></textarea>
+<label for="src2" style="margin-top:8px">링크 2의 페이지 소스</label><textarea id="src2"></textarea>
+<p class="note">붙여넣은 칸이 있으면 그 내용을 우선 사용합니다.</p></details>
+<p class="note">이 파일을 저장해 직접 열어 사용하세요. 사이트가 직접 접근을 막으면 공개 중계 서비스(allorigins, corsproxy)를 거치며, 이때 링크 주소가 해당 서비스에 전달됩니다. 공개 문서에만 쓰세요.</p>
+</div>
+
+<div id="out"></div>
+<div class="row" id="tools" style="display:none"><button id="copy">결과 복사</button><button class="sec" id="shot">표 이미지 만들기</button><span class="note" id="msg" style="margin:0"></span></div>
+<div id="shotbox"></div>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>(s||'').replace(/\s+/g,' ').trim();
+let pairs=null,docs=[];
+
+/* ---------- 항 번호 / 일자 ---------- */
+function nums(s){const out=[];String(s).split(/\s*,\s*/).forEach(p=>{const m=p.match(/^(\d+)\s*[-–~]\s*(\d+)$/);
+  if(m){for(let i=+m[1];i<=+m[2]&&i-m[1]<30;i++)out.push(i)}else if(/^\d+$/.test(p.trim()))out.push(+p)});return out}
+const NUMLIST=/\d+(?:\s*[-–~]\s*\d+)?(?:\s*,\s*\d+(?:\s*[-–~]\s*\d+)?)*/;
+function refOf(cap){const m=cap.match(/\(([^()]*)\)\s*[*_]*$/);if(!m||!/\d/.test(m[1]))return[];const n=m[1].match(NUMLIST);return n?nums(n[0]):[]}
+const DS=['\\d{4}년\\s*\\d{1,2}월\\s*\\d{1,2}일?(?:\\s*[-–~]\\s*(?:\\d{1,2}월\\s*)?\\d{1,2}일?)?',
+ '[A-Za-z]{3,9}\\.?\\s+\\d{1,2}(?:\\s*[-–~]\\s*(?:[A-Za-z]{3,9}\\.?\\s+)?\\d{1,2})?,?\\s*\\d{4}',
+ '\\d{1,2}(?:\\s*[-–~]\\s*\\d{1,2})?\\s+[A-Za-z]{3,9}\\.?(?:\\s*[-–~]\\s*\\d{1,2}\\s+[A-Za-z]{3,9}\\.?)?,?\\s*\\d{4}'];
+const DFULL=DS.map(x=>new RegExp('^'+x+'$')),DANY=DS.map(x=>new RegExp(x));
+function findDate(texts,loose){
+  for(const t of texts){const x=norm(t);if(x.length<50&&DFULL.some(r=>r.test(x)))return x}
+  for(const t of loose||[]){const x=norm(t);for(const r of DANY){const m=x.match(r);if(m)return m[0]}}
+  return '';
+}
+
+/* ---------- 분석 ---------- */
+function langName(code){if(!code)return '';try{return new Intl.DisplayNames(['ko'],{type:'language'}).of(code.split('-')[0])||code}catch(e){return code}}
+const IMG_RE=/\.(?:jpe?g|png|gif|webp|avif|svg)(?:[?#]|$)/i;
+function imgCands(f,base){
+  const out=[];
+  const add=v=>{v=String(v||'').trim();if(!v||/^data:/i.test(v))return;
+    try{v=new URL(v,base||undefined).href}catch(e){return}
+    if(!out.includes(v))out.push(v)};
+  const els=[f,...f.querySelectorAll('*')];
+  const i0=f.querySelector('img');if(i0){add(i0.getAttribute('src'));add(i0.getAttribute('data-src'))}
+  ['data-img-size-lg','data-img-size-md','data-img-size-sm','data-img-size-xs'].forEach(a=>els.forEach(e=>add(e.getAttribute(a))));
+  els.forEach(e=>{
+    if(e.tagName==='IMG'||e.tagName==='SOURCE'){
+      ['src','data-src','data-original','data-lazy-src'].forEach(a=>add(e.getAttribute(a)));
+      const ss=e.getAttribute('srcset')||e.getAttribute('data-srcset');
+      if(ss)ss.split(',').map(x=>x.trim().split(/\s+/)[0]).reverse().forEach(add);
+    }
+  });
+  els.forEach(e=>{for(const a of e.attributes||[]){if(/^(href|data-zoom|data-img|data-url)/i.test(a.name)&&IMG_RE.test(a.value))add(a.value)}});
+  return out;
+}
+function analyzeHTML(html,base){
+  const d=new DOMParser().parseFromString(html,'text/html');
+  const title=norm((d.querySelector('h1')||d.querySelector('title')||{}).textContent);
+  const metas=[...d.querySelectorAll('meta[name=description],meta[property="og:description"],meta[name="og:description"]')].map(m=>m.getAttribute('content')||'');
+  const date=findDate([...d.querySelectorAll('h1,h2,h3,h4,p,strong,span,div')].map(e=>e.textContent),metas);
+  const figs=[...d.querySelectorAll('figure')].map(f=>{
+    const img=f.querySelector('img'),cap=f.querySelector('figcaption');
+    let srcs=imgCands(f,base);
+    if(!srcs.length&&f.parentElement&&f.parentElement.querySelectorAll('figure').length===1)srcs=imgCands(f.parentElement,base);
+    const caption=norm(cap&&cap.textContent);
+    return {caption,alt:norm(img&&(img.getAttribute('alt')||img.getAttribute('data-alt'))),src:srcs[0]||'',srcs,ns:refOf(caption)};
+  }).filter(f=>f.caption||f.alt);
+  return {title,date,lang:d.documentElement.getAttribute('lang')||'',figs};
+}
+function analyzeText(txt){
+  const lines=txt.split(/\n/).map(norm).filter(Boolean);
+  const figs=lines.filter(l=>l.length<400&&!/^\d+\.?\s/.test(l)&&/\((?:[^()]*?(?:항|참조|paragraph|par\.|see)[^()]*)\)\s*[*_]*$/i.test(l))
+    .map(l=>{const caption=l.replace(/^[*_\s]+|[*_\s]+$/g,'');return {caption,alt:'',src:'',srcs:[],ns:refOf(caption)}});
+  return {title:lines[0]||'',date:findDate(lines),lang:'',figs};
+}
+function parse(raw,url){return /<(figure|figcaption|p|div|html)[\s>]/i.test(raw)?analyzeHTML(raw,url):analyzeText(raw)}
+
+/* ---------- 불러오기 ---------- */
+const PROXIES=[u=>u,u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),u=>'https://corsproxy.io/?url='+encodeURIComponent(u)];
+async function fetchPage(u,k){
+  let last;
+  for(let i=0;i<PROXIES.length;i++){
+    try{
+      $('#fmsg').textContent='링크 '+k+(i?' 중계 서비스로 다시 시도 중… ('+i+'/'+(PROXIES.length-1)+')':' 불러오는 중…');
+      const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000);
+      const r=await fetch(PROXIES[i](u),{signal:ctl.signal});clearTimeout(to);
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const t=await r.text();
+      if(/<(figure|p)[\s>]/i.test(t))return t;
+      throw new Error('본문 없음');
+    }catch(e){last=e}
+  }
+  throw last;
+}
+async function load(k){
+  const url=$('#url'+k).value.trim(),paste=$('#src'+k).value;
+  let raw=paste.trim()?paste:null;
+  if(!raw&&url){if(!/^https?:\/\//.test(url))throw new Error('http(s) 링크가 필요합니다');raw=await fetchPage(url,k)}
+  return raw?parse(raw,url):null;
+}
+
+/* ---------- 짝짓기 / 표시 ---------- */
+function pair(A,B){
+  const rows=[],used=new Set();
+  if(!B){A.figs.forEach(a=>rows.push({a,b:null}));return rows}
+  A.figs.forEach((a,i)=>{
+    let j=a.ns.length?B.figs.findIndex((b,x)=>!used.has(x)&&b.ns[0]===a.ns[0]):-1;
+    if(j<0&&i<B.figs.length&&!used.has(i))j=i;
+    if(j>=0)used.add(j);
+    rows.push({a,b:j>=0?B.figs[j]:null});
+  });
+  B.figs.forEach((b,x)=>{if(!used.has(x))rows.push({a:null,b})});
+  return rows;
+}
+function labels(ds){
+  let l=ds.map((d,i)=>d?(langName(d.lang)||'언어 '+(i+1)):'');
+  if(l[0]&&l[0]===l[1]){l[0]+=' 1';l[1]+=' 2'}return l;
+}
+function imgFail(el){
+  let rest=[];try{rest=JSON.parse(el.getAttribute('data-alts')||'[]')}catch(e){}
+  if(rest.length){const n=rest.shift();el.setAttribute('data-alts',JSON.stringify(rest));el.src=n;return}
+  let all=[];try{all=JSON.parse(el.getAttribute('data-all')||'[]')}catch(e){}
+  const p=document.createElement('p');p.className='note';p.textContent='이미지를 불러오지 못했습니다. 시도한 주소:';
+  all.slice(0,6).forEach(u=>{const d=document.createElement('div');d.style.cssText='font-size:11px;word-break:break-all';
+    const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';a.textContent=u;d.appendChild(a);p.appendChild(d)});
+  el.replaceWith(p);
+}
+function imgTag(list){list=[...new Set((list||[]).filter(Boolean))];if(!list.length)return '';
+  return '<img src="'+esc(list[0])+'" referrerpolicy="no-referrer" onerror="imgFail(this)" data-all="'+esc(JSON.stringify(list))+'" data-alts="'+esc(JSON.stringify(list.slice(1)))+'" alt="" style="width:100%;border-radius:8px;display:block;margin-top:8px">'}
+function isMerged(p){return $('#opt1').checked}
+function hangOf(ds,ls){return ds.some((d,i)=>/[가-힣]/.test(ls[i]||'')||/^ko/i.test(d.lang||''))?'항':''}
+function col(lg,f,showImg){
+  if(!f)return '<div class="col"><div class="lg">'+esc(lg)+'</div><p class="v" style="color:var(--mu)">대응하는 삽화 없음</p></div>';
+  return '<div class="col"><div class="lg">'+esc(lg)+'</div>'+(showImg?imgTag(f.srcs):'')+'<div class="k">캡션</div><p class="v cap">'+esc(f.caption||'(없음)')+'</p>'
+    +(f.alt?'<div class="k">삽화 설명</div><p class="v">'+esc(f.alt)+'</p>':'')+'</div>';
+}
+function render(){
+  const [A,B]=docs,[la,lb]=labels(docs);
+  const hd=(docs.find(d=>d.date)||{}).date,hang=hangOf(docs,[la,lb]);
+  let h='<div class="card">'+(hd?'<div style="font-size:17px;font-weight:700;color:var(--ac);margin-bottom:10px">연구기사 '+esc(hd)+'</div>':'');
+  [[A,la],[B,lb]].forEach(([d,l])=>{if(d)h+='<div style="margin-bottom:10px"><div class="lg">['+esc(l)+']</div><div><b>'+esc(d.title)+'</b></div></div>'});
+  h+='<p class="note" style="margin:4px 0 0">삽화 '+pairs.length+'개</p></div>';
+  pairs.forEach((p,i)=>{
+    const ns=(p.a&&p.a.ns.length?p.a:p.b||{ns:[]}).ns,m=isMerged(p),s0=(p.a&&p.a.src)||(p.b&&p.b.src);
+    h+='<div class="card"><h3 style="font-size:16px;margin:0 0 8px"><span class="tag">삽화'+(i+1)+(ns.length?' ('+esc(ns.join(', '))+hang+')':'')+'</span></h3>'
+      +(m&&s0?'<div class="imgs">'+imgTag([...(p.a?p.a.srcs:[]),...(p.b?p.b.srcs:[])])+'</div>':'')
+      +'<div class="cols">'+col(la||'언어 1',p.a,!m)+(B?col(lb||'언어 2',p.b,!m):'')+'</div></div>';
+  });
+  $('#out').innerHTML=h;$('#tools').style.display='flex';$('#msg').textContent='';
+}
+function toText(){
+  const [A,B]=docs,[la,lb]=labels(docs),hang=hangOf(docs,[la,lb]);
+  const hd=(docs.find(d=>d.date)||{}).date;
+  let t=hd?'연구기사 '+hd+'\n\n':'';
+  [[A,la],[B,lb]].forEach(([d,l])=>{if(d)t+='['+l+']\n'+d.title+'\n\n'});
+  pairs.forEach((p,i)=>{
+    const ns=(p.a&&p.a.ns.length?p.a:p.b||{ns:[]}).ns;
+    t+='## 삽화'+(i+1)+(ns.length?' ('+ns.join(', ')+hang+')':'')+'\n';
+    if(p.a)t+='['+la+'] '+p.a.caption+(p.a.alt?'\n  설명: '+p.a.alt:'')+'\n';
+    if(p.b)t+='['+lb+'] '+p.b.caption+(p.b.alt?'\n  설명: '+p.b.alt:'')+'\n';
+    const s=(p.a&&p.a.src)||(p.b&&p.b.src);if(s)t+='이미지: '+s+'\n';
+    t+='\n';
+  });
+  return t.trimEnd()+'\n';
+}
+function show(t){$('#out').innerHTML='<div class="card empty">'+esc(t)+'</div>';$('#tools').style.display='none'}
+
+
+/* ---------- 표 이미지 ---------- */
+const FONT='"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif';
+const imgCache={};
+function loadUrl(u){return new Promise(res=>{const im=new Image();im.crossOrigin='anonymous';const t=setTimeout(()=>res(null),25000);
+  im.onload=()=>{clearTimeout(t);res(im)};im.onerror=()=>{clearTimeout(t);res(null)};im.src=u})}
+async function getAny(list){for(const u of [...new Set(list||[])].slice(0,6)){const im=await getImg(u);if(im)return im}return null}
+async function getImg(src){
+  if(!src)return null;if(src in imgCache)return imgCache[src];
+  let im=await loadUrl(src);
+  for(let i=1;!im&&i<PROXIES.length;i++){
+    try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),25000);const r=await fetch(PROXIES[i](src),{signal:ctl.signal});clearTimeout(to);if(!r.ok)continue;const b=await r.blob();if(!/^image\//.test(b.type))continue;im=await loadUrl(URL.createObjectURL(b))}catch(e){}
+  }
+  return imgCache[src]=im;
+}
+function wrap(ctx,text,maxW){
+  const out=[];let line='';const push=()=>{out.push(line.trimEnd());line=''};
+  for(const tok of String(text).split(/(\s+)/)){
+    if(!tok)continue;
+    if(ctx.measureText(line+tok).width<=maxW){line+=tok;continue}
+    if(line.trim())push();
+    if(/^\s+$/.test(tok))continue;
+    if(ctx.measureText(tok).width<=maxW){line=tok;continue}
+    for(const ch of tok){if(ctx.measureText(line+ch).width>maxW&&line)push();line+=ch}
+  }
+  if(line.trim())push();
+  return out.length?out:[''];
+}
+function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');return p(d.getFullYear()%100)+p(d.getMonth()+1)+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes())}
+async function buildTable(){
+  const [A,B]=docs,[la,lb]=labels(docs);
+  const entries=[[A,la],[B,lb]].filter(x=>x[0]);
+  const IM=await Promise.all(pairs.map(async p=>{
+    const m=isMerged(p),sa=p.a?p.a.srcs:[],sb=p.b?p.b.srcs:[];
+    if(m)return {one:await getAny([...sa,...sb])};
+    return {a:await getAny(sa),b:await getAny(sb)};
+  }));
+  const W=1200,P=28,langs=B?2:1,anyM=pairs.some(isMerged),c0=anyM?340:96,cw=(W-2*P-c0)/langs;
+  const hang=entries.some(([d,l])=>/[가-힣]/.test(l||'')||/^ko/i.test(d.lang||''))?'항':'';
+  const x0=P,x1=P+c0,x2=P+c0+cw,INK='#1d1d1b',MU='#6b6b66',AC='#2f5d8a',BD='#d8d8d2';
+  function pass(ctx,dr,M){
+    ctx.textBaseline='top';let y=0;
+    if(dr){ctx.fillStyle='#fff';ctx.fillRect(0,0,W,M.H);ctx.fillStyle=AC;ctx.fillRect(0,0,W,M.hdr)}
+    y=P;
+    const hd=(entries.find(x=>x[0].date)||[{}])[0].date;
+    if(hd){ctx.font='700 28px '+FONT;if(dr){ctx.fillStyle='#fff';ctx.fillText('연구기사 '+hd,P,y)}y+=50}
+    for(const [d,l] of entries){
+      ctx.font='700 20px '+FONT;
+      if(dr){ctx.fillStyle='#cfe0f1';ctx.fillText('['+l+']',P,y)}
+      y+=30;ctx.font='700 30px '+FONT;
+      for(const ln of wrap(ctx,d.title,W-2*P)){if(dr){ctx.fillStyle='#fff';ctx.fillText(ln,P,y)}y+=42}
+      y+=18;
+    }
+    y+=P-18;M.hdr=y;
+    if(dr){ctx.fillStyle='#eef3f8';ctx.fillRect(P,y,W-2*P,46);ctx.fillStyle=AC;ctx.font='700 20px '+FONT;
+      ctx.fillText('삽화',x0+12,y+12);ctx.fillText(la,x1+12,y+12);if(B)ctx.fillText(lb,x2+12,y+12)}
+    y+=46;
+    const drawImg=(im,x,w,cy)=>{let h;
+      if(im){h=Math.round(w*im.height/im.width);if(dr)ctx.drawImage(im,x,cy,w,h)}
+      else{h=110;if(dr){ctx.fillStyle='#f0f0ec';ctx.fillRect(x,cy,w,h);ctx.fillStyle=MU;ctx.font='18px '+FONT;ctx.fillText('이미지를 불러오지 못했습니다',x+12,cy+44)}}
+      return cy+h+10};
+    const txt=(lines,x,cy,lh,color)=>{for(const ln of lines){if(dr){ctx.fillStyle=color;ctx.fillText(ln,x,cy)}cy+=lh}return cy};
+    pairs.forEach((p,i)=>{
+      const top=y,m=isMerged(p),ns=(p.a&&p.a.ns.length?p.a:p.b||{ns:[]}).ns,s0=(p.a&&p.a.src)||(p.b&&p.b.src);
+      let c=top+12;
+      ctx.font='700 22px '+FONT;
+      c=txt(wrap(ctx,'삽화'+(i+1)+(ns.length?' ('+ns.join(', ')+hang+')':''),c0-24),x0+12,c,30,AC);
+      if(m&&s0)c=drawImg(IM[i].one,x0+12,c0-24,c+4);
+      let bottom=c;
+      [[p.a,x1],[p.b,x2]].slice(0,langs).forEach(([f,x])=>{
+        let cy=top+12;const w=cw-24;
+        if(!f){ctx.font='italic 18px '+FONT;cy=txt(['대응하는 삽화 없음'],x+12,cy,28,MU)}
+        else{
+          if(!m&&f.src)cy=drawImg(f===p.a?IM[i].a:IM[i].b,x+12,w,cy);
+          ctx.font='italic 20px '+FONT;cy=txt(wrap(ctx,f.caption||'(없음)',w),x+12,cy,30,INK)+6;
+          if(f.alt){ctx.font='17px '+FONT;cy=txt(wrap(ctx,f.alt,w),x+12,cy,26,MU)}
+        }
+        bottom=Math.max(bottom,cy);
+      });
+      y=bottom+12;
+      if(dr){ctx.strokeStyle=BD;ctx.lineWidth=1;ctx.beginPath();
+        ctx.moveTo(P,y);ctx.lineTo(W-P,y);
+        [P,x1,langs>1?x2:null,W-P].forEach(x=>{if(x!=null){ctx.moveTo(x,top);ctx.lineTo(x,y)}});ctx.stroke()}
+    });
+    y+=16;ctx.font='16px '+FONT;
+    if(dr){ctx.fillStyle=MU;ctx.fillText('생성 '+stamp(),P,y)}
+    y+=40;M.H=y;
+  }
+  const cv=document.createElement('canvas'),ctx=cv.getContext('2d'),M={};
+  cv.width=W;cv.height=10;pass(ctx,false,M);
+  let sc=2;while(W*sc*M.H*sc>14e6&&sc>1)sc-=0.25;
+  cv.width=Math.round(W*sc);cv.height=Math.round(M.H*sc);ctx.scale(sc,sc);
+  pass(ctx,true,M);
+  return new Promise((res,rej)=>{try{cv.toBlob(b=>b?res(b):rej(new Error('변환 실패')),'image/png')}catch(e){rej(e)}});
+}
+function showShot(blob){
+  const name='삽화표_'+stamp()+'.png',url=URL.createObjectURL(blob),file=new File([blob],name,{type:'image/png'});
+  const canShare=!!(navigator.canShare&&navigator.canShare({files:[file]}));
+  $('#shotbox').innerHTML='<div class="card"><img src="'+url+'" alt="표 이미지" style="width:100%;border:1px solid var(--bd);border-radius:8px;display:block">'
+    +'<div class="row">'+(canShare?'<button id="shr">공유</button>':'')+'<button class="sec" id="sav">이미지 저장</button></div>'
+    +'<p class="note">'+esc(name)+(canShare?'':' · 이 브라우저는 공유를 지원하지 않아 저장만 가능합니다. 이미지를 길게 눌러 저장할 수도 있습니다.')+'</p></div>';
+  if(canShare)$('#shr').onclick=()=>navigator.share({files:[file],title:name}).catch(()=>{});
+  $('#sav').onclick=()=>{const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()};
+  $('#shotbox').scrollIntoView({behavior:'smooth'});
+}
+
+/* ---------- 이벤트 ---------- */
+$('#go').onclick=async()=>{
+  $('#go').disabled=true;const errs=[],res=[];
+  for(const k of ['1','2']){try{res.push(await load(k))}catch(e){res.push(null);errs.push('링크 '+k+': '+e.message)}}
+  $('#go').disabled=false;
+  docs=res.filter(Boolean);
+  if(!docs.length){$('#fmsg').textContent=errs.length?errs.join(' / ')+' — 아래 “자동 불러오기가 안 될 때”에 소스를 붙여넣어 보세요.':'';show(errs.length?'불러오지 못했습니다.':'링크를 입력하세요.');return}
+  const [A,B]=docs;
+  if(!A.figs.length&&!(B&&B.figs.length)){show('삽화(figure)/figcaption을 찾지 못했습니다.');return}
+  pairs=pair(A,B||null);render();
+  $('#fmsg').textContent=errs.length?errs.join(' / '):'완료';
+};
+['url1','url2'].forEach(id=>{
+  $('#'+id).addEventListener('paste',()=>setTimeout(()=>{if($('#url1').value.trim()&&$('#url2').value.trim())$('#go').click()},50));
+  $('#'+id).addEventListener('keydown',e=>{if(e.key==='Enter')$('#go').click()});
+});
+$('#shot').onclick=async()=>{
+  if(!pairs)return;$('#shot').disabled=true;$('#msg').textContent='표 이미지를 만드는 중… (이미지 불러오는 데 시간이 걸릴 수 있습니다)';
+  try{showShot(await buildTable());$('#msg').textContent=''}catch(e){$('#msg').textContent='이미지 생성 실패: '+e.message}
+  $('#shot').disabled=false;
+};
+try{const v=localStorage.getItem('opt1');if(v!==null)$('#opt1').checked=v==='1'}catch(e){}
+$('#opt1').onchange=()=>{try{localStorage.setItem('opt1',$('#opt1').checked?'1':'0')}catch(e){}if(pairs)render()};
+$('#clr').onclick=()=>{['url1','url2','src1','src2'].forEach(i=>$('#'+i).value='');$('#out').innerHTML='';$('#shotbox').innerHTML='';$('#tools').style.display='none';$('#fmsg').textContent='';pairs=null};
+$('#copy').onclick=async()=>{
+  if(!pairs)return;const t=toText();
+  try{await navigator.clipboard.writeText(t);$('#msg').textContent='복사됨'}
+  catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();
+    try{document.execCommand('copy');$('#msg').textContent='복사됨'}catch(_){$('#msg').textContent='복사 실패'}a.remove()}
+};
+
+/* ---------- 릴리즈 노트 (업데이트마다 맨 위에 항목 추가) ---------- */
+const RELEASES=[
+ {v:'v261008_1223',notes:['릴리즈 노트 보기 추가: 제목 옆 버튼으로 버전별 누적 변경 내역 확인']},
+ {v:'261008_1221',notes:['이미지 불러오기 순서 복원: 이미지 태그의 원래 주소를 항상 먼저 시도','이미지 대기 시간 25초로 연장, 후보 주소 최대 6개까지 시도','이미지가 끝내 실패하면 시도한 주소 전체를 눌러 열 수 있게 표시']},
+ {v:'261008_1201',notes:['이미지 후보 주소 수집(크기별 주소, 지연 로딩, srcset, 확대 링크)과 순차 시도','링크 1의 이미지가 실패하면 링크 2의 이미지로 대체','표 이미지도 같은 방식으로 이미지 불러오기','알려진 문제: 일부 환경에서 이미지가 뜨지 않음 (1221에서 수정)']},
+ {v:'261008_1158',notes:['본문 화면에도 같은 형식 적용: 맨 위 “연구기사 일자”, 언어별 [언어] 제목을 문단으로 분리','삽화 제목을 “삽화1 (11항)” 형식으로 표시','결과 복사 텍스트도 같은 형식으로 변경']},
+ {v:'261008_1156',notes:['표 이미지 머리말 문단 분리: 연구기사 일자 / [한국어] 제목 / [다른 언어] 제목']},
+ {v:'261008_1150',notes:['표 이미지 첫 칸 표기를 “삽화1 (11항)”으로 변경','표 이미지 머리말 일자 앞에 “연구기사” 추가']},
+ {v:'261008_1145',notes:['이미지 옵션을 “링크 1 기준으로 하나만 표시”로 변경 (이미지 주소 비교 제거)','링크 1 이미지가 실패하면 링크 2 이미지로 자동 대체','이미지 요청 시 출처 정보를 보내지 않도록 변경']},
+ {v:'261008_1109',notes:['“동일한 이미지는 하나만 표시” 옵션 추가','표 이미지 만들기 추가: 미리보기, 공유, 저장 (파일명 삽화표_일자_시각.png)']},
+ {v:'261008_1101',notes:['2개 언어 동시 표시: 링크 2개 입력, 삽화별 캡션·설명·일자를 나란히 표시','항 번호가 같은 삽화끼리 짝짓기(없으면 순서대로)']},
+ {v:'261008_1012',notes:['단일 언어 삽화 추출기: 링크 붙여넣기 시 자동 실행, 삽화만 추출','헤더에 일자 표시, 파일명에 일자·시각 버전 추가']},
+ {v:'261008_초기',notes:['삽화·figcaption 분석기 최초 제작: 페이지 소스 붙여넣기 방식','링크 자동 불러오기와 중계 서비스 추가']}
+];
+function renderRN(){
+  $('#rn').innerHTML='<b>릴리즈 노트</b> <span class="note">최신순 · 업데이트마다 누적됩니다</span>'+RELEASES.map((r,i)=>
+    '<div style="margin-top:12px"><span class="tag">v'+esc(r.v.replace(/^v/,''))+'</span>'+(i===0?'<span class="note">현재 버전</span>':'')
+    +'<ul style="margin:6px 0 0;padding-left:20px">'+r.notes.map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul></div>').join('');
+}
+$('#rnb').onclick=()=>{const c=$('#rn');c.style.display=c.style.display==='none'?'block':'none'};
+renderRN();
+</script></body></html>
